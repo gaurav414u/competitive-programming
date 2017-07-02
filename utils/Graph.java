@@ -46,6 +46,70 @@ public class Main {
     }
 }
 
+class QuickUnion {
+    int[] id;
+
+    QuickUnion(int V) {
+        id = new int[V];
+        for (int i = 0 ; i < V ; i++) {
+            id[i] = i;
+        }
+    }
+
+    private int root(int v) {
+        while (v != id[v]) {
+            v = id[v];
+        }
+        return v;
+    }
+
+    public boolean connected(int v, int w) {
+        return root(v) == root(w);
+
+    }
+
+    public void union(int v, int w) {
+        id[root(v)] = root(w);
+    }
+}
+
+class MST {
+    List<WeightedEdge> mst;
+
+    MST(EdgeWeightedGraph g) {
+        mst = new ArrayList<>();
+        PriorityQueue<WeightedEdge> minpq = new PriorityQueue<>(new Comparator<WeightedEdge>() {
+            @Override
+            public int compare(WeightedEdge o1, WeightedEdge o2) {
+                return Long.compare(o1.weight, o2.weight);
+            }
+        });
+        for (WeightedEdge e: g.edges()) {
+            minpq.add(e);
+        }
+        QuickUnion uf = new QuickUnion(g.V());
+
+        while(!minpq.isEmpty()) {
+            WeightedEdge e = minpq.poll();
+            int v = e.either();
+            int w = e.other();
+            if (!uf.connected(v, w)) {
+                uf.union(v, w);
+                mst.add(e);
+            }
+        }
+    }
+
+    public int weight()  {
+        int w = 0;
+        for (WeightedEdge e : mst) {
+            w += e.weight();
+        }
+        return w;
+    }
+
+}
+
 
 class DijkstraSP {
     public long[] distTo;
@@ -147,6 +211,7 @@ class EdgeWeightedDiGraph implements Graph<DirectedEdge> {
 class EdgeWeightedGraph implements Graph<WeightedEdge> {
     private int mV;
     private List<WeightedEdge>[] mAdjList;
+    private List<WeightedEdge> edges;
 
     /**
      * Create a graph with V vertices
@@ -154,6 +219,7 @@ class EdgeWeightedGraph implements Graph<WeightedEdge> {
      */
     public EdgeWeightedGraph(int V) {
         this.mV = V;
+        edges = new ArrayList<>();
         mAdjList = (List<WeightedEdge>[]) new List[V];
         for (int i = 0 ; i < V ; i ++) {
             mAdjList[i] = new ArrayList<>();
@@ -165,6 +231,7 @@ class EdgeWeightedGraph implements Graph<WeightedEdge> {
         int w = e.other(v);
         mAdjList[v].add(e);
         mAdjList[w].add(e);
+        edges.add(e);
     }
 
     @Override
@@ -185,6 +252,10 @@ class EdgeWeightedGraph implements Graph<WeightedEdge> {
     @Override
     public int E() {
         return 0;
+    }
+
+    public List<WeightedEdge> edges() {
+        return edges;
     }
 
     @Override
