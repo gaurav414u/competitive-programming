@@ -48,9 +48,12 @@ public class Main {
 
 class QuickUnion {
     int[] id;
+    int[] sz;
 
-    QuickUnion(int V) {
+    public QuickUnion(int V) {
         id = new int[V];
+        sz = new int[V];
+
         for (int i = 0 ; i < V ; i++) {
             id[i] = i;
         }
@@ -58,10 +61,12 @@ class QuickUnion {
 
     private int root(int v) {
         while (v != id[v]) {
+            id[v] = id[id[v]];
             v = id[v];
         }
         return v;
     }
+
 
     public boolean connected(int v, int w) {
         return root(v) == root(w);
@@ -69,43 +74,42 @@ class QuickUnion {
     }
 
     public void union(int v, int w) {
-        id[root(v)] = root(w);
+        int i = root(v);
+        int j = root(w);
+        if (sz[i] < sz[j]) {
+            id[i] = j;
+            sz[j] += sz[i];
+        } else {
+            id[j] = i;
+            sz[i] += sz[j];
+        }
     }
 }
 
 class MST {
     List<WeightedEdge> mst;
+    int weight;
 
-    MST(EdgeWeightedGraph g) {
+
+    public MST(EdgeWeightedGraph g) {
         mst = new ArrayList<>();
-        PriorityQueue<WeightedEdge> minpq = new PriorityQueue<>(new Comparator<WeightedEdge>() {
-            @Override
-            public int compare(WeightedEdge o1, WeightedEdge o2) {
-                return Long.compare(o1.weight, o2.weight);
-            }
-        });
-        for (WeightedEdge e: g.edges()) {
-            minpq.add(e);
-        }
+
+        g.edges().sort((o1, o2) -> Long.compare(o1.weight, o2.weight));
         QuickUnion uf = new QuickUnion(g.V());
 
-        while(!minpq.isEmpty()) {
-            WeightedEdge e = minpq.poll();
+        int edgeSize = g.E();
+
+        int i = 0;
+        while(i < edgeSize) {
+            WeightedEdge e = g.edges().get(i++);
             int v = e.either();
             int w = e.other();
             if (!uf.connected(v, w)) {
                 uf.union(v, w);
+                weight += e.weight();
                 mst.add(e);
             }
         }
-    }
-
-    public int weight()  {
-        int w = 0;
-        for (WeightedEdge e : mst) {
-            w += e.weight();
-        }
-        return w;
     }
 
 }
@@ -251,7 +255,7 @@ class EdgeWeightedGraph implements Graph<WeightedEdge> {
 
     @Override
     public int E() {
-        return 0;
+        return edges.size();
     }
 
     public List<WeightedEdge> edges() {
